@@ -1,33 +1,57 @@
-// Copyright 2020 Google LLC
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     https://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
-// [START cloudrun_helloworld_service]
-// [START run_helloworld_service]
+const { google } = require('googleapis');
 const express = require('express');
+const moment = require('moment');
 const app = express();
 
-app.get('/', (req, res) => {
-  const name = process.env.NAME || 'World';
-  res.send(`Hello ${name}!`);
-});
-
-const port = parseInt(process.env.PORT) || 8080;
+const port = process.env.PORT || 8080;
 app.listen(port, () => {
-  console.log(`helloworld: listening on port ${port}`);
+  console.log('SlipSlap REST API listening on port', port);
 });
-// [END run_helloworld_service]
-// [END cloudrun_helloworld_service]
 
-// Exports for testing purposes.
-module.exports = app;
+app.get('/orders', async (req, res) => {
+  const ingredient = await getAllRows();
+  let retVal;
+  if (ingredient) {
+    retVal = {status: 'success', data: {ingredient: ingredient}};
+  }
+  else {
+    res.status(404);
+    retVal = {status: 'fail', data: {title: `Ingredient ${id} not found`}};
+  }
+  res.setHeader('content-type', 'application/json');
+  res.end(JSON.stringify(retVal));
+});
+
+async function getAllRows() {
+  const auth = await google.auth.getClient({
+    scopes: ['https://www.googleapis.com/auth/spreadsheets']
+  });
+  const api = google.sheets({version: 'v4', auth});
+  const response = await api.spreadsheets.values.get({
+    spreadsheetId: '13xbC0cHcOmUq9fsu94ebcfVa7x0IeDIa7MmR4zUePRs',
+    range: 'Sheet1'
+  });
+
+  let result = []
+  let rowNum = 0
+  for (let row of response.data.values) {
+    if (rowNum++ === 0) continue
+    //BOUGHT 100 C @ 49.35 (UXXX7281)
+    let rData = row[1].split(" ")
+
+    var format = "ddd, DD MMM YYYY HH:mm:ss Z"
+    var dt = moment(row[0], format)
+
+    result.push({
+      symbol: rData[2],
+      side: rData[0],
+      qty: rData[1],
+      price: rData[4],
+      time: row[0],
+      timeLong: dt.valueOf()/1000
+    })
+
+  }
+
+  return result
+}
