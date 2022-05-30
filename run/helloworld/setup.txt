@@ -1,0 +1,1 @@
+cloudshell_open --repo_url "https://github.com/memorydoor/nodejs-docs-samples" --dir "run/helloworld" --page "shell" --force_new_clone
