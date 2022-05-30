@@ -8,7 +8,7 @@ app.listen(port, () => {
   console.log('SlipSlap REST API listening on port', port);
 });
 
-app.get('/orders', async (req, res) => {
+app.get('/', async (req, res) => {
   const ingredient = await getAllRows();
   let retVal;
   if (ingredient) {
